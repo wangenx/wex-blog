@@ -5,13 +5,13 @@ const { SuccessModel, ErrorModel } = require('../model/resModel');
 router.prefix('/api/user')
 
 router.post('/login', async function(ctx, next) {
-  console.log(ctx.request.body)
   const { username, password } = ctx.request.body;
   const data = await login(username, password);
   if(data.username) {
     // 设置 session
     ctx.session.username = data.username;
     ctx.session.realname = data.realname;
+    console.log(ctx.session)
     ctx.body = new SuccessModel('登录成功')
     return;
   }
@@ -19,6 +19,12 @@ router.post('/login', async function(ctx, next) {
 })
 
 router.get('/session-test', async function (ctx, next) {
+  if(ctx.session.username) {
+    ctx.body = new SuccessModel('登录成功')
+  }else {
+    ctx.body = ctx.session;
+    return
+  }
   if(ctx.session.viewCount == null) {
     ctx.session.viewCount = 0
   }

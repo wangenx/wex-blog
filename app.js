@@ -12,11 +12,14 @@ const path = require('path')
 const fs = require('fs')
 const morgan = require('koa-morgan')
 
+const cors = require('koa2-cors')
+
 const index = require('./routes/index')
 const blog = require('./routes/blog')
 const user = require('./routes/user')
 
 const { REDIS_CONF } = require('./conf/db')
+
 
 // 记录日志
 const ENV = process.env.NODE_ENV;
@@ -45,20 +48,34 @@ app.use(bodyparser({
 
 // 跨域设置 
 // app.use(convert(cors));
-app.use(async (ctx, next) => {
-  ctx.set('Access-Control-Allow-Origin', '*');
-  await next();
-});
+// app.use(async (ctx, next) => {
+//   ctx.set('Access-Control-Allow-Origin', '*');
+//   await next();
+// });
+app.use(cors({
+  origin: function (ctx) {
+    if (ctx.url === '/test') {
+        return "*"; // 允许来自所有域名请求
+    }
+    return 'http://localhost:8001'; // 这样就能只允许 http://localhost:8080 这个域名的请求了
+  },
+  exposeHeaders: ['WWW-Authenticate', 'Server-Authorization'],
+  maxAge: 5,
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'DELETE', "PUT", "OPTIONS"],
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+}));
 
 app.use(async (ctx, next)=> {
-ctx.set('Access-Control-Allow-Origin', 'http://localhost:8001');
-ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
-ctx.set('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
-if (ctx.method == 'OPTIONS') {
-  ctx.body = 200; 
-} else {
-  await next();
-}
+// ctx.set('Access-Control-Allow-Origin', 'http://localhost:8001');
+// ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
+// ctx.set('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+// ctx.set('Access-Control-Allow-Credentials', true);
+  if (ctx.method == 'OPTIONS') {
+    ctx.body = 200; 
+  } else {
+    await next();
+  }
 });
 
 app.use(json())
@@ -81,11 +98,13 @@ app.use(async (ctx, next) => {
 app.keys = ['&jsd_4555%#']
 app.use(session({
   // 配置cookie
-  cookie: {
-    path: '/',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
-  },
+    cookie: {
+      path: '/',
+      httpOnly: true,
+      overwrite: true,
+      rolling: true,
+      maxAge: 4 * 60 * 1000,
+    },
   // 配置 redis
   store: redisStore({
     // all: '127.0.0.1:6379'  // 先写死本地的 redis
