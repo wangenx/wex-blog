@@ -11,7 +11,6 @@ router.post('/login', async function(ctx, next) {
     // 设置 session
     ctx.session.username = data.username;
     ctx.session.realname = data.realname;
-    console.log(ctx.session)
     ctx.body = new SuccessModel('登录成功')
     return;
   }
